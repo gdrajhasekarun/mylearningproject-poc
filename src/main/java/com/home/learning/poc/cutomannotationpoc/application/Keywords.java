@@ -16,7 +16,21 @@ public class Keywords {
 
     @TestDataKeys({"username", "password"})
     public void loginTest() {
-        System.out.println(this.testDataProvider.getData("", "username"));
-        System.out.println(this.testDataProvider.getData("", "password"));
+        System.out.println(this.testDataProvider.getData("sheet1", "username"));
+        System.out.println(this.testDataProvider.getData("sheet1", "password"));
+    }
+
+    public void enterMemberDetails() {
+        System.out.println(this.testDataProvider.getData("sheet1", "MemberId"));
+        System.out.println(this.testDataProvider.getData("sheet1", "MemberName"));
+    }
+
+    private void enterDetails() {
+        System.out.println("Private method");
+    }
+
+    private String enterDetailsAndReturn() {
+        System.out.println("Private method");
+        return null;
     }
 }

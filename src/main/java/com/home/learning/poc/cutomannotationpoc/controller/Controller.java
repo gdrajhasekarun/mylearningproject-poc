@@ -42,7 +42,7 @@ public class Controller {
     }
 
     @GetMapping("/keyword-list-aop")
-    public ResponseEntity<Map<String, List<String>>> getAllKeywordsAop() throws IOException {
+    public ResponseEntity<List<Keyword>> getAllKeywordsAop() throws IOException {
         return ResponseEntity.ok(this.testCaseExecutor.getAllKeywordsWithoutAnnotation());
     }
 }

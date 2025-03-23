@@ -54,7 +54,7 @@ public class TestCaseExecutor {
                     .forEach(method -> {
                 Keyword keyword = new Keyword(method.getName());
                 if(method.isAnnotationPresent(TestDataKeys.class)){
-                    keyword.setTestData(Arrays.asList(method.getAnnotation(TestDataKeys.class).value()));
+                    keyword.setTestData(new HashSet<>(Arrays.asList(method.getAnnotation(TestDataKeys.class).value())));
                 }
                 keywords.add(keyword);
             });
@@ -62,13 +62,13 @@ public class TestCaseExecutor {
         return keywords;
     }
 
-    public Map<String, List<String>> getAllKeywordsWithoutAnnotation() throws IOException {
+    public List<Keyword> getAllKeywordsWithoutAnnotation() throws IOException {
         Set<Class<?>> keywordClasses = getAllClassesInKeywordPackage();
-        Map<String, List<String>> keywordListMap = new HashMap<>();
+        List<Keyword> keywordList = new ArrayList<>();
         for(Class<?> keywordClass: keywordClasses){
-            this.testDataInterceptorASM.extractTestDataKeys(keywordClass, keywordListMap);
+            this.testDataInterceptorASM.extractTestDataKeys(keywordClass, keywordList);
         }
-        return keywordListMap;
+        return keywordList;
     }
 
     private boolean isMethodFound(Class<?>keywordClass, String method){

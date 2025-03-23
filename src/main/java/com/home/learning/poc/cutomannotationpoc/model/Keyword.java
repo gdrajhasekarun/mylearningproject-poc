@@ -2,17 +2,17 @@ package com.home.learning.poc.cutomannotationpoc.model;
 
 import lombok.Data;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 public class Keyword {
 
     public Keyword(String keywordName) {
         this.keywordName = keywordName;
-        this.testData = new ArrayList<>();
+        this.testData = new HashSet<>();
     }
 
     private String keywordName;
-    private List<String> testData;
+    private Set<String> testData;
 }

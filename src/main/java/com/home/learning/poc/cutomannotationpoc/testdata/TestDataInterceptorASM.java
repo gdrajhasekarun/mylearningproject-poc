@@ -1,29 +1,34 @@
 package com.home.learning.poc.cutomannotationpoc.testdata;
 
+import com.home.learning.poc.cutomannotationpoc.model.Keyword;
 import org.objectweb.asm.*;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 @Component
 public class TestDataInterceptorASM {
 
-    public Map<String, List<String>> extractTestDataKeys(Class<?> clazz, Map<String, List<String>> methodTestData) throws IOException {
+    public void extractTestDataKeys(Class<?> clazz, List<Keyword> keywordList) throws IOException {
 
         for (Method method : clazz.getDeclaredMethods()) {
-            List<String> testDataKeys = analyzeMethod(clazz, method.getName());
+            if(!(method.getReturnType().toString().equals("void") && method.getModifiers()== Modifier.PUBLIC))
+                continue;
+            Set<String> testDataKeys = analyzeMethod(clazz, method.getName());
+            Keyword keyword = new Keyword(method.getName());
             if (!testDataKeys.isEmpty()) {
-                methodTestData.put(method.getName(), testDataKeys);
+                keyword.setTestData(testDataKeys);
             }
+            keywordList.add(keyword);
         }
 
-        return methodTestData;
     }
 
-    private List<String> analyzeMethod(Class<?> clazz, String methodName) throws IOException {
-        List<String> testDataKeys = new ArrayList<>();
+    private Set<String> analyzeMethod(Class<?> clazz, String methodName) throws IOException {
+        Set<String> testDataKeys = new HashSet<>();
 
         ClassReader classReader = new ClassReader(clazz.getName());
         classReader.accept(new ClassVisitor(Opcodes.ASM9) {
