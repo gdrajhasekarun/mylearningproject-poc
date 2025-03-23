@@ -3,6 +3,8 @@ package com.home.learning.poc.cutomannotationpoc.service;
 import com.home.learning.poc.cutomannotationpoc.annotation.TestDataKeys;
 import com.home.learning.poc.cutomannotationpoc.application.Keywords;
 import com.home.learning.poc.cutomannotationpoc.model.Keyword;
+import com.home.learning.poc.cutomannotationpoc.testdata.TestDataInterceptorASM;
+import com.home.learning.poc.cutomannotationpoc.testdata.TestDataProvider;
 import javassist.bytecode.analysis.SubroutineScanner;
 import javassist.tools.reflect.Reflection;
 import org.reflections.Reflections;
@@ -12,13 +14,20 @@ import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class TestCaseExecutor {
 
-    public TestCaseExecutor() {
+    TestDataProvider testDataProvider;
+    TestDataInterceptorASM testDataInterceptorASM;
+
+    public TestCaseExecutor(TestDataProvider testDataProvider, TestDataInterceptorASM testDataInterceptorASM) {
+        this.testDataProvider = testDataProvider;
+        this.testDataInterceptorASM = testDataInterceptorASM;
     }
 
     public void executeTestcases(List<String> keywordList, Map<String, String> testDataMap) throws Exception {
@@ -28,7 +37,8 @@ public class TestCaseExecutor {
             if(testClass == null){
                 throw new Exception("Unable to Find the keyword");
             }
-            Object instance = testClass.getDeclaredConstructor(Map.class).newInstance(testDataMap);
+            this.testDataProvider.setDataProvider(testDataMap);
+            Object instance = testClass.getDeclaredConstructor(TestDataProvider.class).newInstance(testDataProvider);
             Method method = testClass.getMethod(keyword);
             method.setAccessible(true);
             method.invoke(instance);
@@ -50,6 +60,15 @@ public class TestCaseExecutor {
             });
         }
         return keywords;
+    }
+
+    public Map<String, List<String>> getAllKeywordsWithoutAnnotation() throws IOException {
+        Set<Class<?>> keywordClasses = getAllClassesInKeywordPackage();
+        Map<String, List<String>> keywordListMap = new HashMap<>();
+        for(Class<?> keywordClass: keywordClasses){
+            this.testDataInterceptorASM.extractTestDataKeys(keywordClass, keywordListMap);
+        }
+        return keywordListMap;
     }
 
     private boolean isMethodFound(Class<?>keywordClass, String method){

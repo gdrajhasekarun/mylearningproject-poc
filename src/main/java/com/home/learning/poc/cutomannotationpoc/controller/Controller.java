@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 public class Controller {
@@ -37,5 +39,10 @@ public class Controller {
     @GetMapping("/keyword-list")
     public ResponseEntity<List<Keyword>> getAllKeywords() {
         return ResponseEntity.ok(this.testCaseExecutor.getAllKeywords());
+    }
+
+    @GetMapping("/keyword-list-aop")
+    public ResponseEntity<Map<String, List<String>>> getAllKeywordsAop() throws IOException {
+        return ResponseEntity.ok(this.testCaseExecutor.getAllKeywordsWithoutAnnotation());
     }
 }
