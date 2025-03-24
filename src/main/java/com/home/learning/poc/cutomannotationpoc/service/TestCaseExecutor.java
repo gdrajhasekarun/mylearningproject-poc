@@ -5,17 +5,18 @@ import com.home.learning.poc.cutomannotationpoc.application.Keywords;
 import com.home.learning.poc.cutomannotationpoc.model.Keyword;
 import com.home.learning.poc.cutomannotationpoc.testdata.TestDataInterceptorASM;
 import com.home.learning.poc.cutomannotationpoc.testdata.TestDataProvider;
-import javassist.bytecode.analysis.SubroutineScanner;
-import javassist.tools.reflect.Reflection;
-import org.reflections.Reflections;
-import org.reflections.scanners.Scanners;
-import org.reflections.scanners.SubTypesScanner;
-import org.reflections.util.ClasspathHelper;
-import org.reflections.util.ConfigurationBuilder;
+//import javassist.bytecode.analysis.SubroutineScanner;
+//import javassist.tools.reflect.Reflection;
+//import org.reflections.Reflections;
+//import org.reflections.scanners.Scanners;
+//import org.reflections.scanners.SubTypesScanner;
+//import org.reflections.util.ClasspathHelper;
+//import org.reflections.util.ConfigurationBuilder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -75,8 +76,39 @@ public class TestCaseExecutor {
         return Arrays.stream(keywordClass.getMethods()).filter(method1 -> method1.getName().equals(method)).findFirst().orElse(null)!=null;
     }
 
+//    private Set<Class<?>> getAllClassesInKeywordPackage() {
+//        Reflections reflections = new Reflections( "com.home.learning.poc.cutomannotationpoc.application", Scanners.SubTypes.filterResultsBy( s -> true));
+//        return reflections.get( Scanners.SubTypes.of( Object.class).asClass());
+//    }
+
     private Set<Class<?>> getAllClassesInKeywordPackage() {
-        Reflections reflections = new Reflections( "com.home.learning.poc.cutomannotationpoc.application", Scanners.SubTypes.filterResultsBy( s -> true));
-        return reflections.get( Scanners.SubTypes.of( Object.class).asClass());
+        String packageName = "com.home.learning.poc.cutomannotationpoc.application";
+        Set<Class<?>> classes = new HashSet<>();
+        try{
+            String path = packageName.replace('.', '/');
+            Enumeration<URL> resources = Thread.currentThread().getContextClassLoader().getResources(path);
+
+            while (resources.hasMoreElements()) {
+                URL resource = resources.nextElement();
+                classes.addAll(findClassesInDirectory(resource.getPath(), packageName));
+            }
+        } catch (ClassNotFoundException | IOException e) {
+            throw new RuntimeException(e);
+        }
+        return classes;
+    }
+
+    private static List<Class<?>> findClassesInDirectory(String directory, String packageName) throws ClassNotFoundException {
+        List<Class<?>> classes = new ArrayList<>();
+        java.io.File dir = new java.io.File(directory);
+        if (!dir.exists()) return classes;
+
+        for (String file : Objects.requireNonNull(dir.list())) {
+            if (file.endsWith(".class")) {
+                String className = packageName + '.' + file.substring(0, file.length() - 6);
+                classes.add(Class.forName(className));
+            }
+        }
+        return classes;
     }
 }

@@ -51,17 +51,17 @@
             <artifactId>lombok</artifactId>
             <version>1.18.36</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>33.4.0-jre</version>
-        </dependency>
-        <dependency>
-            <groupId>org.reflections</groupId>
-            <artifactId>reflections</artifactId>
-            <version>0.10.2</version>
-        </dependency>
+<!--        &lt;!&ndash; https://mvnrepository.com/artifact/com.google.guava/guava &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>com.google.guava</groupId>-->
+<!--            <artifactId>guava</artifactId>-->
+<!--            <version>33.4.0-jre</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.reflections</groupId>-->
+<!--            <artifactId>reflections</artifactId>-->
+<!--            <version>0.10.2</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
