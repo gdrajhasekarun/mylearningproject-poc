@@ -1,8 +1,8 @@
 package com.home.learning.poc.cutomannotationpoc.service;
 
 import com.home.learning.poc.cutomannotationpoc.annotation.TestDataKeys;
-import com.home.learning.poc.cutomannotationpoc.application.Keywords;
 import com.home.learning.poc.cutomannotationpoc.model.Keyword;
+import com.home.learning.poc.cutomannotationpoc.model.Steps;
 import com.home.learning.poc.cutomannotationpoc.testdata.TestDataInterceptorASM;
 import com.home.learning.poc.cutomannotationpoc.testdata.TestDataProvider;
 //import javassist.bytecode.analysis.SubroutineScanner;
@@ -12,27 +12,31 @@ import com.home.learning.poc.cutomannotationpoc.testdata.TestDataProvider;
 //import org.reflections.scanners.SubTypesScanner;
 //import org.reflections.util.ClasspathHelper;
 //import org.reflections.util.ConfigurationBuilder;
+import com.home.learning.poc.cutomannotationpoc.testdata.TestStepInterceptorASM;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 @Service
 public class TestCaseExecutor {
 
     TestDataProvider testDataProvider;
     TestDataInterceptorASM testDataInterceptorASM;
+    TestStepInterceptorASM testStepInterceptorASM;
 
-    public TestCaseExecutor(TestDataProvider testDataProvider, TestDataInterceptorASM testDataInterceptorASM) {
+    public TestCaseExecutor(TestDataProvider testDataProvider, TestDataInterceptorASM testDataInterceptorASM, TestStepInterceptorASM testStepInterceptorASM) {
         this.testDataProvider = testDataProvider;
         this.testDataInterceptorASM = testDataInterceptorASM;
+        this.testStepInterceptorASM = testStepInterceptorASM;
     }
 
     public void executeTestcases(List<String> keywordList, Map<String, String> testDataMap) throws Exception {
-        Set<Class<?>> keywordClasses = getAllClassesInKeywordPackage();
+        Set<Class<?>> keywordClasses = getAllClassesInKeywordPackage("com.home.learning.poc.cutomannotationpoc.application");
         for (String keyword: keywordList){
             Class<?> testClass = keywordClasses.stream().filter(keywordClass -> this.isMethodFound(keywordClass, keyword)).findFirst().orElse(null);
             if(testClass == null){
@@ -47,7 +51,7 @@ public class TestCaseExecutor {
     }
 
     public List<Keyword> getAllKeywords() {
-        Set<Class<?>> keywordClasses = getAllClassesInKeywordPackage();
+        Set<Class<?>> keywordClasses = getAllClassesInKeywordPackage("com.home.learning.poc.cutomannotationpoc.application");
         List<Keyword> keywords = new ArrayList<>();
         for(Class<?> keywordClass: keywordClasses){
             Arrays.stream(keywordClass.getMethods())
@@ -64,12 +68,21 @@ public class TestCaseExecutor {
     }
 
     public List<Keyword> getAllKeywordsWithoutAnnotation() throws IOException {
-        Set<Class<?>> keywordClasses = getAllClassesInKeywordPackage();
+        Set<Class<?>> keywordClasses = getAllClassesInKeywordPackage("com.home.learning.poc.cutomannotationpoc.application");
         List<Keyword> keywordList = new ArrayList<>();
         for(Class<?> keywordClass: keywordClasses){
             this.testDataInterceptorASM.extractTestDataKeys(keywordClass, keywordList);
         }
         return keywordList;
+    }
+
+    public List<Steps> getAllKeywordsWithTestSteps() throws IOException {
+        Set<Class<?>> keywordClasses = getAllClassesInKeywordPackage("com.home.learning.poc.cutomannotationpoc.teststeps");
+        List<Steps> testSteps = new ArrayList<>();
+        for(Class<?> keywordClass: keywordClasses) {
+            this.testStepInterceptorASM.analyzeTestSteps(keywordClass, testSteps);
+        }
+        return testSteps;
     }
 
     private boolean isMethodFound(Class<?>keywordClass, String method){
@@ -81,8 +94,9 @@ public class TestCaseExecutor {
 //        return reflections.get( Scanners.SubTypes.of( Object.class).asClass());
 //    }
 
-    private Set<Class<?>> getAllClassesInKeywordPackage() {
-        String packageName = "com.home.learning.poc.cutomannotationpoc.application";
+    private Set<Class<?>> getAllClassesInKeywordPackage(String packageName) {
+//        String packageName = "com.home.learning.poc.cutomannotationpoc.teststeps";
+//        String packageName = "com.home.learning.poc.cutomannotationpoc.application";
         Set<Class<?>> classes = new HashSet<>();
         try{
             String path = packageName.replace('.', '/');
@@ -90,7 +104,12 @@ public class TestCaseExecutor {
 
             while (resources.hasMoreElements()) {
                 URL resource = resources.nextElement();
-                classes.addAll(findClassesInDirectory(resource.getPath(), packageName));
+                if (resource.getProtocol().equals("file")) {
+                    classes.addAll(findClassesInDirectory(resource.getPath(), packageName));
+                } else if (resource.getProtocol().equals("jar")) {
+                    String jarPath = resource.getFile().split("!")[0].substring(5);
+                    classes.addAll(findClassesInJar(jarPath, path));
+                }
             }
         } catch (ClassNotFoundException | IOException e) {
             throw new RuntimeException(e);
@@ -106,7 +125,23 @@ public class TestCaseExecutor {
         for (String file : Objects.requireNonNull(dir.list())) {
             if (file.endsWith(".class")) {
                 String className = packageName + '.' + file.substring(0, file.length() - 6);
-                classes.add(Class.forName(className));
+//                if(className.endsWith("Steps"))
+                    classes.add(Class.forName(className));
+            }
+        }
+        return classes;
+    }
+
+    private static List<Class<?>> findClassesInJar(String jarPath, String packagePath) throws IOException, ClassNotFoundException {
+        List<Class<?>> classes = new ArrayList<>();
+        try (JarFile jarFile = new JarFile(jarPath)) {
+            Enumeration<JarEntry> entries = jarFile.entries();
+            while (entries.hasMoreElements()) {
+                JarEntry entry = entries.nextElement();
+                if (entry.getName().startsWith(packagePath) && entry.getName().endsWith(".class")) {
+                    String className = entry.getName().replace('/', '.').replace(".class", "");
+                    classes.add(Class.forName(className));
+                }
             }
         }
         return classes;

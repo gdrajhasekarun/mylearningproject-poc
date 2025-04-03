@@ -1,6 +1,7 @@
 package com.home.learning.poc.cutomannotationpoc.controller;
 
 import com.home.learning.poc.cutomannotationpoc.model.Keyword;
+import com.home.learning.poc.cutomannotationpoc.model.Steps;
 import com.home.learning.poc.cutomannotationpoc.model.TestCase;
 import com.home.learning.poc.cutomannotationpoc.service.TestCaseExecutor;
 import org.springframework.http.HttpStatus;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 public class Controller {
@@ -44,5 +44,10 @@ public class Controller {
     @GetMapping("/keyword-list-aop")
     public ResponseEntity<List<Keyword>> getAllKeywordsAop() throws IOException {
         return ResponseEntity.ok(this.testCaseExecutor.getAllKeywordsWithoutAnnotation());
+    }
+
+    @GetMapping("/steps-list-aop")
+    public ResponseEntity<List<Steps>> getAllStepsAop() throws IOException {
+        return ResponseEntity.ok(this.testCaseExecutor.getAllKeywordsWithTestSteps());
     }
 }

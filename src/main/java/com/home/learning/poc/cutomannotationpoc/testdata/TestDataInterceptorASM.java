@@ -1,6 +1,7 @@
 package com.home.learning.poc.cutomannotationpoc.testdata;
 
 import com.home.learning.poc.cutomannotationpoc.model.Keyword;
+import com.home.learning.poc.cutomannotationpoc.model.SubMethod;
 import org.objectweb.asm.*;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +28,7 @@ public class TestDataInterceptorASM {
 
     }
 
-    private Set<String> analyzeMethod(Class<?> clazz, String methodName) throws IOException {
+    public Set<String> analyzeMethod(Class<?> clazz, String methodName) throws IOException {
         Set<String> testDataKeys = new HashSet<>();
 
         ClassReader classReader = new ClassReader(clazz.getName());
@@ -60,6 +61,40 @@ public class TestDataInterceptorASM {
         }, 0);
 
         return testDataKeys;
+    }
+
+    public List<SubMethod> extractMethodCalls(String methodName, Class<?> clazz, String packageName) throws IOException {
+        List<SubMethod> methodCalls = new ArrayList<>();
+
+        ClassReader reader = new ClassReader(clazz.getName());
+        reader.accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String descriptor,
+                                             String signature, String[] exceptions) {
+                if (name.equals(methodName)) {
+                    return new MethodVisitor(Opcodes.ASM9) {
+                        @Override
+                        public void visitMethodInsn(int opcode, String owner, String name,
+                                                    String descriptor, boolean isInterface) {
+
+                            if (owner.startsWith(packageName) &&
+                                    !name.equals(methodName) &&
+                                    !name.startsWith("access$") &&
+                                    opcode == Opcodes.INVOKEVIRTUAL) {
+                                try {
+                                    methodCalls.add(new SubMethod(Class.forName(owner.replace('/', '.')), name));
+                                } catch (ClassNotFoundException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                        }
+                    };
+                }
+                return null;
+            }
+        }, 0);
+
+        return methodCalls;
     }
 
 }
